@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Page | スロットAIグラフ</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f8f9fa; margin: 0; }
+        header { background: #4CAF50; color: white; padding: 20px; text-align: center; }
+        main { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+        canvas { width: 100% !important; height: auto !important; }
+        footer { text-align: center; margin-top: 20px; padding: 10px; background: #ecf0f1; }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>My Page - スロットデータ</h1>
+    </header>
+
+    <main>
+        <h2>データ一覧</h2>
+        <p>（ここにAPIから取得したデータ一覧を表示予定）</p>
+
+        <h2>グラフ表示</h2>
+        <canvas id="slotChart"></canvas>
+
+        <script>
+            // サンプルデータ
+            const ctx = document.getElementById('slotChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月'],
+                    datasets: [{
+                        label: '出玉推移',
+                        data: [1000, 3000, 1500, 5000, 7000],
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2,
+                        fill: true
+                    }]
+                }
+            });
+        </script>
+
+    </main>
+
+    <footer>
+        &copy; 2025 YourName
+    </footer>
+</body>
+
+</html>
