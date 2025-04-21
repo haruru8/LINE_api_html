@@ -60,7 +60,7 @@
 
     function loginWithLine() {
       const clientId = '2007222156';  // ←あなたのチャネルID
-      const redirectUri = encodeURIComponent('https://haruru8.github.io/LINE_api_html/callback.html'); // ←実際の戻り先URL
+      const redirectUri = encodeURIComponent('https://haruru8.github.io/LINE_api_html'); // ←実際の戻り先URL
       const state = generateRandomString();
       const nonce = generateRandomString();
       const scope = 'openid%20profile';
