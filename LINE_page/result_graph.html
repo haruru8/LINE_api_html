@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>スロット記録表示</title>
+</head>
+<body>
+  <h1>スロット記録</h1>
+  <p id="userIdDisplay">ユーザーIDを取得中...</p>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const userId = params.get("userId");
+
+    if (userId) {
+      document.getElementById("userIdDisplay").innerText = `ログイン中のユーザーID: ${userId}`;
+
+      // ここでEC2に問い合わせて、userIdに基づく記録を表示する処理に繋げる
+      // 例:
+      // fetch(`http://YOUR_EC2_IP:5000/user-data?userId=${userId}`)
+      //   .then(res => res.json())
+      //   .then(data => { ... });
+
+    } else {
+      document.getElementById("userIdDisplay").innerText = "ユーザーIDが見つかりませんでした";
+    }
+  </script>
+</body>
+</html>

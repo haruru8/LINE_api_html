@@ -2,15 +2,49 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>認証処理中...</title>
+  <title>LINE認証中...</title>
 </head>
 <body>
-  <p>LINEログイン処理中です...</p>
+  <h2>LINEログイン処理中...</h2>
+  <p id="status">しばらくお待ちください</p>
+
   <script>
-    const params = new URLSearchParams(location.search);
+    // ランダムに生成したstateとの一致を確認
+    const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     const state = params.get("state");
-    document.body.innerHTML += `<p>code: ${code}</p><p>state: ${state}</p>`;
+    const savedState = localStorage.getItem("line_login_state");
+
+    if (!code || !state || state !== savedState) {
+      document.getElementById("status").innerText = "セキュリティチェック失敗（state不一致）";
+    } else {
+      // state OK なので、EC2にPOSTしてuserIdをもらう
+      fetch("http://YOUR_EC2_PUBLIC_IP:5000/line-auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          code: code,
+          redirectUri: "https://haruru8.github.io/LINE_api_html/LINE_page/callback.html"
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.userId) {
+          // userIdを取得したらリダイレクト
+          window.location.href = `result_graph.html?userId=${data.userId}`;
+        } else {
+          document.getElementById("status").innerText = "認証失敗：" + JSON.stringify(data);
+        }
+      })
+      .catch(err => {
+        document.getElementById("status").innerText = "通信エラー：" + err;
+      });
+
+      // 一度使ったstateは削除
+      localStorage.removeItem("line_login_state");
+    }
   </script>
 </body>
 </html>
