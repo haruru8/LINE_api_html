@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>認証処理中...</title>
+</head>
+<body>
+  <p>LINEログイン処理中です...</p>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const code = params.get("code");
+    const state = params.get("state");
+    document.body.innerHTML += `<p>code: ${code}</p><p>state: ${state}</p>`;
+  </script>
+</body>
+</html>
