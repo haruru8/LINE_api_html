@@ -33,7 +33,7 @@
       .then(data => {
         if (data.userId) {
           // userIdを取得したらリダイレクト
-          window.location.href = `result_graph.html?userId=${data.userId}`;
+          window.location.href = 'result_graph.html?userId=${data.userId}';
         } else {
           document.getElementById("status").innerText = "認証失敗：" + JSON.stringify(data);
         }

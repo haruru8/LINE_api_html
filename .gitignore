@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# フロントエンド用の非公開設定ファイル
+config.js
+
+
 # Distribution / packaging
 .Python
 build/
