@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2025年5月11日 - 開発日記 | Tech Blog</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background: #34495e;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    main {
+      max-width: 800px;
+      margin: 20px auto;
+      background: white;
+      padding: 30px 25px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      line-height: 1.8;
+    }
+
+    h1 {
+      color: white;
+      margin: 0;
+    }
+
+    h2 {
+      color: #2c3e50;
+      margin-top: 30px;
+      margin-bottom: 10px;
+    }
+
+    ul {
+      padding-left: 20px;
+      margin-bottom: 20px;
+    }
+
+    ul li {
+      margin-bottom: 5px;
+    }
+
+    p {
+      margin-bottom: 20px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      padding: 10px;
+      background: #ecf0f1;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>2025年5月11日 - 開発日記</h1>
+  </header>
+
+  <main>
+    <section>
+      <h2>■ 今日やったこと</h2>
+      <ul>
+        <li>・EC2ってお金かかるし、httpsにするのも大変じゃない？って思った</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>■ EC2ってお金かかるし、httpsにするのも大変じゃない？</h2>
+      <p>現状、LINEのAPIを管理してるコードは全部EC2上に上げてる。</p>
+      <p>理由は：</p>
+      <ul>
+        <li>・Lambdaではmatplotlibを利用しようとするとLambdaのサイズ上限を超えてしまうから</li>
+        <li>・もともと家のPCをサーバー代わりに起動して使っていたため、そのコードをEC2にコピペするだけで簡単に実装できたから</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>■ Dockerを使えばLambdaに入れられるらしい！</h2>
+      <p>やり方はこんな感じかな：</p>
+      <ul>
+        <li>① DockerにPythonやmatplotlibなどのパッケージをいれる</li>
+        <li>② Amazon ECRにDockerをアップロード</li>
+        <li>③ LambdaでDocker起動させる</li>
+      </ul>
+      <p>この実装方法はChatGPTくんが教えてくれたけど、正確かどうかは分からない</p>
+      <p>でも、これができたらメリットは大きい：</p>
+      <ul>
+        <li>・Lambdaならhttps通信を簡単に実装できる（らしい）</li>
+        <li>・EC2と比べて安く運用できる</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>■ って思ってちょっと調べてみたけど、、、</h2>
+      <p>今のデータ集計くんは、チャットでデータを記録する仕組み</p>
+      <p>メッセージの内容によってユーザーのステータスを変え、状態に応じた処理を行っている</p>
+      <p>でもこの仕組みは、Lambdaの性質にあまり合っていないんだよね</p>
+      <p>Lambda用にコードを書き直す必要がある…</p>
+      <p>…振出しに戻った。 (´;ω;｀)</p>
+    </section>
+
+    <section>
+      <h2>■ 次の目標</h2>
+      <ul>
+        <li>・気合で実装</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    &copy; 2025 haruru8
+  </footer>
+</body>
+
+</html>
