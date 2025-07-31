@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> 開発日記 | Tech Blog</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f9f9f9; margin: 0; padding: 0; }
+        header { background: #34495e; color: white; padding: 20px; text-align: center; }
+        main { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+        h1 { color: white} 
+        h2 { color: #2c3e50; }
+        h3 { color: #34495e; }
+        footer { text-align: center; margin-top: 20px; padding: 10px; background: #ecf0f1; }
+        
+        /* ナビゲーションのスタイル */
+.nav-link {
+    color: white;
+    text-decoration: none;
+    background: rgba(255,255,255,0.2);
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.nav-link:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* ホームへ戻るボタン */
+.home-button {
+    background: #3498db;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.3s;
+}
+
+.home-button:hover {
+    background: #2980b9;
+    color: white;
+}
+
+        /* コードブロックのスタイル */
+        .code-block {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        /* インラインコード */
+        code {
+            background-color: #f4f4f4;
+            color: #d73a49;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        /* リンクのスタイル */
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+<header>
+     <nav style="margin-bottom: 10px; text-align: left;">
+        <a href="../../index.html" style="color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 4px;">ホームへ戻る</a>
+    </nav>
+    <h1>2025年7月27日 - 開発日記</h1>
+</header>
+
+    <main>
+        <h2>■ 今日やったこと</h2>
+        <ul>
+            <li>夏のインターンのためにReactを勉強する</li>
+            <li><a href="https://ja.react.dev/learn" target="_blank">React公式ドキュメント</a>のクイックスタートを読んでみた</li>
+        </ul>
+
+        <h2>■ Reactって何？</h2>
+        <p>なんかサマーインターンの申し込みをする際にReactの使用経験とかよく聞かれるけど、なんなんだろうって思って、調べてみた。</p>
+        <p>ReactはUIを作るためのJavascriptのライブラリらしい</p>
+        <p>詳しくは<a href="https://ja.react.dev/" target="_blank">React公式ドキュメント</a>で確認できる。</p>
+        <p>ってことはReactを学ぶにはまずはJavascriptを勉強する必要があるってことかー</p>
+
+        <h2>■ とりあえずReactを使えるようにしてみる</h2>
+
+        <p>Python仮想環境を作成:</p>
+        <pre class="code-block">python3 -m venv venv</pre>
+        
+        <p>Viteを使ってReactプロジェクトを作成:</p>
+        <pre class="code-block">npm create vite@latest</pre>
+
+        <img src="0727.png" alt="npm run dev" width="600">
+
+        <p>実行するとこんな感じで出てくるから下のnow run に書いてある以下を実行</p>
+        <pre class="code-block">cd vite-project
+npm install
+npm run dev</pre>
+
+        <p>これをすることで <code>http://localhost:5173/</code> を起動できる</p>
+        
+        <h2>■ Reactを勉強してみる</h2>
+        <p>基本的に<a href="https://ja.react.dev/learn" target="_blank">React公式ドキュメント</a>を利用して勉強してみる</p>
+        <p>今日はさわりの部分だけでもやってみた</p>
+
+        <h3>1. コンポーネントの基本</h3>
+        <p>Reactは<strong>コンポーネント</strong>という部品でアプリを作る。コンポーネントは関数で作れる。</p>
+        <pre class="code-block">function MyButton() {
+  return (
+    &lt;button&gt;I'm a button&lt;/button&gt;
+  );
+}</pre>
+        <p>→ ボタンを作る関数。HTMLっぽく書けるのが<strong>JSX</strong>という記法</p>
+
+        <h3>2. コンポーネントを組み合わせる</h3>
+        <p>作ったコンポーネントは他のコンポーネントの中で使える。</p>
+        <pre class="code-block">export default function MyApp() {
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;Welcome to my app&lt;/h1&gt;
+      &lt;MyButton /&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+        <p>→ <code>&lt;MyButton /&gt;</code>で先ほど作ったボタンを表示。大文字で始める必要がある。</p>
+         <p>→ <code>&lt;export default 関数名 { &gt;</code>出力する箇所は多分これ　関数名のところでコードのように関数を定義することもできる</p>
+        <h3>3. データを表示する</h3>
+        <p>JavaScript の変数を <code>{}</code> で囲むとHTMLの中に表示できる。</p>
+        <pre class="code-block">const user = {
+  name: 'Hedy Lamarr',
+  imageUrl: 'https://i.imgur.com/yXOvdOSs.jpg'
+};
+
+function Profile() {
+  return (
+    &lt;&gt;
+      &lt;h1&gt;{user.name}&lt;/h1&gt;
+      &lt;img src={user.imageUrl} alt="Photo" /&gt;
+    &lt;/&gt;
+  );
+}</pre>
+        <p>→ <code>{user.name}</code>で変数の中身を表示。<code>&lt;&gt;&lt;/&gt;</code>は複数の要素をまとめる時に使う。</p>
+
+        <h3>4. 条件分岐</h3>
+        <p>条件によって表示を変えたい時は三項演算子を使う。</p>
+        <pre class="code-block">&lt;div&gt;
+  {isLoggedIn ? (
+    &lt;AdminPanel /&gt;
+  ) : (
+    &lt;LoginForm /&gt;
+  )}
+&lt;/div&gt;</pre>
+        <p>→ <code>isLoggedIn</code>がtrueなら管理画面、falseならログイン画面を表示</p>
+
+        <h3>5. リストの表示</h3>
+        <p>配列のデータを一覧表示する時は<code>map()</code>を使う。</p>
+        <pre class="code-block">const products = [
+  { title: 'Cabbage', id: 1 },
+  { title: 'Garlic', id: 2 },
+  { title: 'Apple', id: 3 }
+];
+
+const listItems = products.map(product =&gt;
+  &lt;li key={product.id}&gt;
+    {product.title}
+  &lt;/li&gt;
+);</pre>
+        <p>→ 配列の各アイテムを<code>&lt;li&gt;</code>に変換。<code>key</code>は必須。</p>
+
+        <h3>6. イベント処理（クリックなど）</h3>
+        <p>ボタンがクリックされた時の処理を書く。</p>
+        <pre class="code-block">function MyButton() {
+  function handleClick() {
+    alert('You clicked me!');
+  }
+
+  return (
+    &lt;button onClick={handleClick}&gt;
+      Click me
+    &lt;/button&gt;
+  );
+}</pre>
+        <p>→ <code>onClick={handleClick}</code>でクリック時の関数を指定。括弧は付けない。</p>
+
+        <h3>7. State（状態管理）</h3>
+        <p>画面の数値を変更したい時は<code>useState</code>を使う。</p>
+        <pre class="code-block">import { useState } from 'react';
+
+function MyButton() {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    setCount(count + 1);
+  }
+
+  return (
+    &lt;button onClick={handleClick}&gt;
+      Clicked {count} times
+    &lt;/button&gt;
+  );
+}</pre>
+        <p>→ <code>count</code>が現在の値、<code>setCount</code>で値を変更。クリックするたびに数字が増える。</p>
+
+        <h2>■ 今日の学び</h2>
+        <ul>
+            <li>Reactはコンポーネントを組み合わせてアプリを作る</li>
+            <li>JSXっていうJSの進化版のようなものを使う</li>
+            <li><code>{}</code>でJavaScriptの変数を表示</li>
+            <li>初めて触ったけど書かれたコードを読めば内容はギリ理解できそう</li>
+        </ul>
+
+        <h2>■ 次の目標</h2>
+        <ul>
+            <li>React公式のチュートリアル（三目並べ）をやってみる</li>
+            <li>チュートリアルをどんどん進めて大体理解できるようにする</li>
+            <li>最終的にこのブログもこれで描けるようになりたいな</li>
+        </ul>
+    </main>
+
+    <footer>
+        &copy; 2025 haruru8
+    </footer>
+</body>
+
+</html>
