@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> 開発日記 | Python × LINEボット接続メモ</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background: #f9f9f9; margin: 0; padding: 0; }
+        header { background: #34495e; color: white; padding: 20px; text-align: center; }
+        main { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+        h1 { color: white} 
+        h2 { color: #2c3e50; }
+        h3 { color: #34495e; }
+        footer { text-align: center; margin-top: 20px; padding: 10px; background: #ecf0f1; }
+        .nav-link { color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 4px; transition: background 0.3s; }
+        .nav-link:hover { background: rgba(255,255,255,0.3); }
+        .home-button { background: #3498db; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; display: inline-block; transition: background 0.3s; }
+        .home-button:hover { background: #2980b9; color: white; }
+        .code-block { background-color: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 10px 0; font-family: 'Courier New', monospace; font-size: 14px; }
+        code { background-color: #f4f4f4; color: #d73a49; padding: 2px 4px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 14px; }
+        a { color: #3498db; text-decoration: none; }
+        a:hover { color: #2980b9; text-decoration: underline; }
+        .tip { background:#f6f8fa; border-left: 4px solid #2ecc71; padding:10px 12px; border-radius:4px; }
+        .warn { background:#fff6f6; border-left: 4px solid #e74c3c; padding:10px 12px; border-radius:4px; }
+    </style>
+</head>
+
+<body>
+<header>
+     <nav style="margin-bottom: 10px; text-align: left;">
+        <a href="../../index.html" class="nav-link">ホームへ戻る</a>
+    </nav>
+    <h1>2025年8月23日 - 開発日記</h1>
+</header>
+
+<main>
+    <h2>■ 今日やったこと（Python × LINEボット接続）</h2>
+    <ul>
+        <li>FastAPIでWebhook受け口を作成</li>
+        <li>LINE Messaging API（v3 SDK）で返信（reply_message）を実装</li>
+        <li>ngrokでローカル公開 → LINE DevelopersでWebhook Verify成功</li>
+        <li>.envでチャネルシークレット／アクセストークンを安全に読み込み</li>
+        <li>v2系 <code>LineBotApi</code> の非推奨警告に対応し、v3構成へ移行</li>
+    </ul>
+
+    <h2>■ セットアップ手順</h2>
+    <h3>1) 仮想環境 & 依存インストール</h3>
+    <pre class="code-block">python -m venv .venv
+source .venv/bin/activate   # Windows: .\.venv\Scripts\activate
+pip install fastapi==0.111.0 uvicorn[standard]==0.30.1 line-bot-sdk==3.11.0 python-dotenv==1.0.1</pre>
+
+    <h3>2) 環境変数（.env）</h3>
+    <pre class="code-block">LINE_CHANNEL_SECRET=（LINEのチャネルシークレット）
+LINE_CHANNEL_ACCESS_TOKEN=（長期アクセストークン）
+PORT=8000</pre>
+
+    <div class="tip">ポイント：<code>python-dotenv</code> の <code>load_dotenv()</code> で .env を読み込む。アクセストークンは「長期」のものを使う。</div>
+
+    <h3>3) FastAPI（署名検証 + reply_message）</h3>
+    <p>SDKはv3のクラスを使用（非推奨警告を回避）。</p>
+    <pre class="code-block">import os, hmac, hashlib, base64
+from fastapi import FastAPI, Request, Header, HTTPException
+from dotenv import load_dotenv
+from linebot.v3.messaging import (
+    Configuration, ApiClient, MessagingApi,
+    ReplyMessageRequest, TextMessage
+)
+
+load_dotenv()
+CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
+CHANNEL_TOKEN  = os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
+
+app = FastAPI()
+config = Configuration(access_token=CHANNEL_TOKEN)
+
+def verify_signature(body: bytes, signature: str):
+    mac = hmac.new(CHANNEL_SECRET.encode("utf-8"), body, hashlib.sha256).digest()
+    expected = base64.b64encode(mac).decode("utf-8")
+    if not hmac.compare_digest(expected, signature):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
+@app.post("/webhook")
+async def webhook(request: Request, x_line_signature: str = Header(None)):
+    body = await request.body()
+    verify_signature(body, x_line_signature)
+    payload = await request.json()
+    for ev in payload.get("events", []):
+        if ev.get("type") == "message" and ev["message"]["type"] == "text":
+            reply_token = ev["replyToken"]
+            text = ev["message"]["text"]
+            with ApiClient(config) as api_client:
+                MessagingApi(api_client).reply_message(
+                    ReplyMessageRequest(
+                        reply_token=reply_token,
+                        messages=[TextMessage(text=f"受け取ったよ: {text}")]
+                    )
+                )
+    return "ok"</pre>
+
+    <h3>4) 起動 & ローカル公開（ngrok）</h3>
+    <pre class="code-block">uvicorn app:app --reload --port 8000
+# A) CLIで
+ngrok http 8000
+# B) もしくは pyngrok
+pip install pyngrok
+python -c "from pyngrok import ngrok; ngrok.set_auth_token('YOUR_TOKEN'); print(ngrok.connect(8000).public_url)"</pre>
+
+    <div class="tip">Webhook URL は <code>https://&lt;公開URL&gt;/webhook</code>（末尾スラッシュ無し）。</div>
+
+    <h3>5) LINE Developers 設定</h3>
+    <ul>
+        <li>Messaging API → Webhook settings → Webhook URL に <code>https://.../webhook</code></li>
+        <li><b>Use webhook: ON</b> → <b>Verify</b> を押して Success</li>
+        <li>自動応答／あいさつメッセージは OFF（重複返信を防ぐ）</li>
+        <li>QRでボットを友だち追加 → 「こんにちは」送信 → 「受け取ったよ: こんにちは」</li>
+    </ul>
+
+    <h2>■ トラブルシューティング</h2>
+    <ul>
+        <li class="warn"><b>404 Not Found</b>：Webhookパスが <code>/webhook</code> と一致していない（末尾スラ禁止）。</li>
+        <li class="warn"><b>401 Invalid signature</b>：<code>LINE_CHANNEL_SECRET</code> が誤り。HMAC検証で弾かれている。</li>
+        <li class="warn">返信が来ない：短期トークン使用、replyTokenの期限切れ（1分）、SDKのv2/v3取り違え。</li>
+        <li>ngrok URL変更：再起動でURLが変わる → LINE側のWebhook URLも更新。</li>
+        <li>ログ確認：<code>http://127.0.0.1:4040</code>（ngrokインスペクタ）と <code>uvicorn</code> の標準出力。</li>
+    </ul>
+
+    <h2>■ ここまでの学び</h2>
+    <ul>
+        <li>Webhookは「外からPOSTを受ける窓口」。FastAPIで簡単に作れる。</li>
+        <li>LINE SDKは v3 のクラス（<code>MessagingApi</code> 等）を使うと警告が消える。</li>
+        <li>Verify成功＝FastAPIまで届いているサイン。返信は <code>reply_message</code> を使う。</li>
+        <li>開発中は ngrok / pyngrok でローカルを公開すると最速。</li>
+    </ul>
+
+    <h2>■ 次の目標（このBot用）</h2>
+    <ul>
+        <li><code>/start</code> / <code>/friend new</code> / <code>/friend join</code> のコマンド実装（2人ペアの共有台帳リンク）</li>
+        <li><code>/borrow</code> / <code>/lend</code> の受け付け（まずはメモ保存なしでレスポンス）</li>
+        <li>DynamoDB 単一テーブルを追加（Users / Pairs / Debts / Invites）</li>
+        <li>記録成功時に相手へプッシュ通知</li>
+    </ul>
+</main>
+
+<footer>
+    &copy; 2025 haruru8
+</footer>
+</body>
+</html>

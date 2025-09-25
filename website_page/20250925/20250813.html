@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>開発日記 | AWS Lambda × LINEボット接続メモ</title>
+  <style>
+    body { font-family: 'Arial', sans-serif; background: #f9f9f9; margin: 0; padding: 0; }
+    header { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+    main { max-width: 800px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    h1 { color: white; }
+    h2 { color: #2c3e50; }
+    h3 { color: #34495e; }
+    footer { text-align: center; margin-top: 20px; padding: 10px; background: #ecf0f1; }
+    .nav-link { color: white; text-decoration: none; background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 4px; transition: background 0.3s; }
+    .nav-link:hover { background: rgba(255,255,255,0.3); }
+    .code-block { background-color: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 10px 0; font-family: 'Courier New', monospace; font-size: 14px; }
+    code { background-color: #f4f4f4; color: #d73a49; padding: 2px 4px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 14px; }
+    .tip { background:#f6f8fa; border-left: 4px solid #2ecc71; padding:10px 12px; border-radius:4px; }
+    .warn { background:#fff6f6; border-left: 4px solid #e74c3c; padding:10px 12px; border-radius:4px; }
+  </style>
+</head>
+
+<body>
+<header>
+  <nav style="margin-bottom: 10px; text-align: left;">
+    <a href="../../index.html" class="nav-link">ホームへ戻る</a>
+  </nav>
+  <h1>2025年9月25日 - 開発日記</h1>
+</header>
+
+<main>
+  <h2>■ 今日やったこと（Lambda × LINEボット）</h2>
+  <ul>
+    <li>最初は FastAPI + Mangum でやろうとしたが、API Gateway のルート設定やパス指定でエラーが続き断念</li>
+    <li>方針を変えて、Lambda の <code>lambda_handler</code> に直接処理を書いたら安定して動作</li>
+    <li>署名検証（HMAC-SHA256 + Base64）を実装</li>
+    <li>LINE Messaging APIへ <code>/v2/bot/message/reply</code> で返信</li>
+    <li>短期セッションは Lambda コンテナのメモリに保存</li>
+    <li><code>requests</code> を Layer に追加してデプロイ成功</li>
+  </ul>
+
+  <h2>■ セットアップ手順</h2>
+  <h3>1) 必要なライブラリ</h3>
+  <pre class="code-block">pip install requests -t ./package</pre>
+  <p>→ zip化してデプロイ、または <b>Layer</b> 化してアタッチ。</p>
+
+  <h3>2) 環境変数（Lambda 設定画面で追加）</h3>
+  <pre class="code-block">LINE_CHANNEL_SECRET=（LINEのチャネルシークレット）
+LINE_CHANNEL_ACCESS_TOKEN=（長期アクセストークン）
+LINE_REPLY_URL=https://api.line.me/v2/bot/message/reply</pre>
+
+  <h3>3) Lambda コード</h3>
+  <pre class="code-block">import json, os, hmac, hashlib, base64, requests
+from datetime import datetime, timedelta
+
+CHANNEL_SECRET = os.environ["LINE_CHANNEL_SECRET"]
+CHANNEL_TOKEN  = os.environ["LINE_CHANNEL_ACCESS_TOKEN"]
+LINE_REPLY_URL = os.environ.get("LINE_REPLY_URL")
+
+SESSIONS = {}  # userId -> {"flow": ..., "expires_at": ...}
+SESSION_TTL = timedelta(minutes=5)
+
+def verify_signature(body, signature):
+    mac = hmac.new(CHANNEL_SECRET.encode(), body, hashlib.sha256).digest()
+    expected = base64.b64encode(mac).decode()
+    return hmac.compare_digest(expected, signature or "")
+
+def send_line_reply(reply_token, message):
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {CHANNEL_TOKEN}"}
+    payload = {"replyToken": reply_token, "messages": [{"type": "text", "text": message}]}
+    requests.post(LINE_REPLY_URL, headers=headers, json=payload)
+
+def lambda_handler(event, context):
+    body = event.get("body", "")
+    headers = event.get("headers", {}) or {}
+    sig = headers.get("x-line-signature") or headers.get("X-Line-Signature")
+
+    if not verify_signature(body.encode(), sig):
+        return {"statusCode": 401, "body": json.dumps({"error": "Invalid signature"})}
+
+    payload = json.loads(body)
+    for ev in payload.get("events", []):
+        if ev.get("type") == "message" and ev["message"]["type"] == "text":
+            reply = f"受け取ったよ: {ev['message']['text']}"
+            send_line_reply(ev["replyToken"], reply)
+
+    return {"statusCode": 200, "body": json.dumps({"message": "ok"})}</pre>
+
+  <h3>4) API Gateway</h3>
+  <ul>
+    <li>統合先: Lambda</li>
+    <li>ルート: ANY /</li>
+    <li>ステージ: default</li>
+    <li>Webhook URL例: <code>https://xxxxx.execute-api.ap-.amazonaws.com/default/name</code></li>
+  </ul>
+
+  <h3>5) LINE Developers 設定</h3>
+  <ul>
+    <li>Webhook URLに API Gateway エンドポイントを登録</li>
+    <li>「Verify」成功 → 実機で送信テスト</li>
+  </ul>
+
+  <h2>■ トラブルシューティング</h2>
+  <ul>
+    <li class="warn"><b>404 Not Found</b>：FastAPI使用時、ルート設定が合わずに発生 → Lambda直書きに変更して解決</li>
+    <li class="warn"><b>401 Invalid signature</b>：シークレット違い／署名検証NG</li>
+    <li class="warn"><b>403 Forbidden</b>：アクセストークン不正</li>
+    <li class="warn">返信がこない → replyToken の有効期限（1分）切れ</li>
+  </ul>
+
+  <h2>■ 学び</h2>
+  <ul>
+    <li>FastAPIやFlaskは便利だが、Lambda + API Gatewayのルート設定が複雑になる</li>
+    <li>最低限のWebhook処理なら <code>lambda_handler</code> に直書きで十分</li>
+    <li>requests は標準ライブラリにないので Layer 必須</li>
+    <li>状態管理はまずメモリ → 将来は DynamoDB に拡張予定</li>
+  </ul>
+</main>
+
+<footer>
+  &copy; 2025 haruru8
+</footer>
+</body>
+</html>
