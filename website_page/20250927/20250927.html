@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ポートフォリオ | 貸し借り集計LINEボット</title>
+  <style>
+    body { font-family: 'Arial', sans-serif; background: #f9f9f9; margin: 0; padding: 0; line-height: 1.6; }
+    header { background: #2c3e50; color: white; padding: 20px; text-align: center; }
+    main { max-width: 900px; margin: 20px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 0 8px rgba(0,0,0,0.1); }
+    h1, h2, h3 { color: #2c3e50; }
+    h1 { margin-bottom: 10px; }
+    h2 { margin-top: 30px; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; }
+    footer { text-align: center; margin-top: 30px; padding: 10px; background: #ecf0f1; }
+    .code-block { background-color: #2d3748; color: #e2e8f0; padding: 12px; border-radius: 6px; overflow-x: auto; margin: 10px 0; font-family: 'Courier New', monospace; font-size: 14px; white-space: pre-wrap; }
+    .diagram { background:#f6f8fa; border: 1px dashed #95a5a6; padding:15px; margin: 15px 0; border-radius:6px; font-family: monospace; color:#2c3e50; }
+    ul { margin: 10px 0 20px 20px; }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>貸し借り集計LINEボット</h1>
+  <p>AWS Lambda × DynamoDB × LINE Messaging API</p>
+</header>
+
+<main>
+  <h2>■ プロジェクト概要</h2>
+  <p>
+    LINE上で「借り」「返す」「集計」と送信するだけで、個人間の貸し借りを記録・集計できる仕組みを開発しました。<br>
+    サーバーレス構成（AWS Lambda + API Gateway + DynamoDB）により、低コストかつシンプルに運用可能です。
+  </p>
+
+  <ul>
+    <li><b>期間:</b> 2025年9月</li>
+    <li><b>目的:</b> 簡単に残高を管理できるLINEボットの実装</li>
+    <li><b>技術スタック:</b> AWS Lambda, API Gateway, DynamoDB, Python, LINE Messaging API</li>
+  </ul>
+
+  <h2>■ アーキテクチャ</h2>
+  <div class="diagram">
+[User]
+   │ LINEメッセージ
+   ▼
+[LINE Messaging API]
+   │ Webhook
+   ▼
+[API Gateway]
+   │ Integration
+   ▼
+[AWS Lambda]
+   │ boto3
+   ▼
+[DynamoDB: Transactions table]
+  </div>
+
+  <h2>■ データ設計</h2>
+  <ul>
+    <li><b>テーブル名:</b> Transactions</li>
+    <li><b>PartitionKey:</b> user（LINE userId）</li>
+    <li><b>SortKey:</b> transactionId（UUID）</li>
+    <li><b>Attributes:</b> amount（借り=＋, 返す=−）, type（borrow/repay）, timestamp</li>
+  </ul>
+
+  <h2>■ 実装ポイント</h2>
+  <ul>
+    <li>Lambdaで署名検証を実装し、セキュリティを確保</li>
+    <li>DynamoDBに「借り=正」「返す=負」として履歴を保存</li>
+    <li>「集計」コマンドで残高を算出し、LINEに返信</li>
+    <li>最初はFastAPIを試したが、Webhookルート設定が複雑だったため、最小構成のLambda直書き方式へ切り替え</li>
+  </ul>
+
+  <h2>■ コード例（抜粋）</h2>
+  <pre class="code-block">if text.startswith("借り"):
+    amount = int(text.replace("借り","").replace("円",""))
+    table.put_item(Item={"user": user, "transactionId": str(uuid.uuid4()),
+                         "amount": amount, "type": "borrow"})
+    reply = f"{amount}円を借りたと記録しました。"
+
+elif text.startswith("返す"):
+    amount = int(text.replace("返す","").replace("円",""))
+    table.put_item(Item={"user": user, "transactionId": str(uuid.uuid4()),
+                         "amount": -amount, "type": "repay"})
+    reply = f"{amount}円を返したと記録しました。"
+
+elif text == "集計":
+    resp = table.scan()
+    total = sum(int(x["amount"]) for x in resp["Items"] if x["user"] == user)
+    reply = f"現在の残高: {total}円"</pre>
+
+  <h2>■ 工夫点</h2>
+  <ul>
+    <li>貸し借り履歴をシンプルな加算・減算モデルで表現</li>
+    <li>DynamoDB利用でスケーラビリティを確保</li>
+    <li>将来的にはDynamoDB Streamsで自動集計やグループ管理に拡張可能</li>
+    <li>実験的にFastAPIも試し、設計判断の比較を経験</li>
+  </ul>
+
+  <h2>■ 学び</h2>
+  <ul>
+    <li>サーバーレス構成は小規模アプリに適しており、低コストで安定運用できる</li>
+    <li>データ設計次第で、複雑な集計もシンプルに表現可能</li>
+    <li>最小構成での安定性と、拡張性を意識した設計の両立が重要</li>
+  </ul>
+</main>
+
+<footer>
+  &copy; 2025 haruru8
+</footer>
+</body>
+</html>
